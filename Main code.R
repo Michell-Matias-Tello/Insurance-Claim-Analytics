@@ -233,11 +233,11 @@ monthly_resolution <- claims_full %>%
 
 # Plot monthly resolution trend
 p_monthly <- ggplot(monthly_resolution, aes(x = date_order, y = mean_days, group = 1)) +
-  geom_line(aes(linetype = "Monthly Average"), color = "#3498DB", linewidth = 2, alpha = 0.9) +
-  geom_point(aes(shape = "Monthly Data"), color = "#E74C3C", size = 2.4, stroke = 2, alpha = 0.95) +
+  geom_line(aes(linetype = "Monthly Average"), color = "#3498DB", linewidth = 1, alpha = 0.9) +
+  geom_point(aes(shape = "Monthly Data"), color = "#E74C3C", size = 0.46, stroke = 2, alpha = 0.95) +
   geom_ribbon(aes(ymin = 25, ymax = mean_days, fill = "Performance Band"), alpha = 0.3) +
-  geom_smooth(aes(linetype = "Trend Line"), color = "#F39C12", linewidth = 1.5, span = 0.4, se = FALSE) +
-  geom_hline(aes(linetype = "35-Day Target"), yintercept = 35, color = "#2ECC71", linewidth = 1.2) +
+  geom_smooth(aes(linetype = "Trend Line"), color = "#F39C12", linewidth = 1, span = 0.4, se = FALSE) +
+  geom_hline(aes(linetype = "35-Day Target"), yintercept = 35, color = "#2ECC71", linewidth = 0.9) +
   labs(
     title = "Claim Resolution Time Evolution (2024-2025)",
     subtitle = "Monthly volatility | Green = 35-day target",
