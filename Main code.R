@@ -1,11 +1,14 @@
+# =============================================================================
 # Insurance Claims Analysis: Time to Resolution & Anomaly Detection
 # Author: Michell Matías Tello
-# Repository: https://github.com/yourusername/insurance-claims-analysis
 # Reference: https://app.notion.com/p/Insurance-Claims-Analysis-Time-to-Resolution-Anomaly-Detection-3344e631f1158011a4c0ce07c2df4244
+# =============================================================================
+
 # =============================================================================
 # SECTION 1: SETUP & INITIALIZATION
 # =============================================================================
-# Load all required libraries (no redundancies)
+
+# Load required libraries
 library(dplyr)
 library(lubridate)
 library(tidyverse)
@@ -15,21 +18,28 @@ library(knitr)
 library(scales)
 library(gt)
 library(stringr)
-# Define base path (adjust this to your local path)
+library(htmltools)
+
+# Define base path (adjust to your local path)
 base_path <- "C:/Users/Michell/Downloads/Insurance"
-# Create directory structure inside Seguros folder
-if (!dir.exists(paste0(base_path, "/data"))) dir.create(paste0(base_path, "/data"))
-if (!dir.exists(paste0(base_path, "/output"))) dir.create(paste0(base_path, "/output"))
-if (!dir.exists(paste0(base_path, "/output/visuals"))) dir.create(paste0(base_path, "/output/visuals"))
-if (!dir.exists(paste0(base_path, "/output/tables"))) dir.create(paste0(base_path, "/output/tables"))
-# Load datasets from the data folder
+
+# Create directory structure
+dirs <- c("/data", "/output", "/output/visuals", "/output/tables")
+for (d in dirs) {
+  if (!dir.exists(paste0(base_path, d))) dir.create(paste0(base_path, d))
+}
+
+# Load datasets
 policies   <- read.csv(paste0(base_path, "/data/policies.csv"))
 clients    <- read.csv(paste0(base_path, "/data/clients.csv"))
 claims     <- read.csv(paste0(base_path, "/data/claims.csv"))
 payments   <- read.csv(paste0(base_path, "/data/payments.csv"))
+
+
 # =============================================================================
 # SECTION 2: DATA PREPROCESSING
 # =============================================================================
+
 # Convert date columns to Date type
 policies$issue_date   <- as.Date(policies$issue_date)
 policies$start_date   <- as.Date(policies$start_date)
@@ -38,22 +48,29 @@ claims$claim_date         <- as.Date(claims$claim_date)
 claims$notification_date  <- as.Date(claims$notification_date)
 claims$closure_date       <- as.Date(claims$closure_date)
 payments$payment_date     <- as.Date(payments$payment_date)
+
 # Calculate resolution days for each claim
 claims$resolution_days <- as.numeric(claims$closure_date - claims$claim_date)
+
+
 # =============================================================================
 # SECTION 3: DATA MERGING - CREATE claims_full
 # =============================================================================
+
 # Merge claims with policies
 claims_full <- merge(claims, policies, by = "id_policy")
+
 # Rename and merge with clients
 colnames(claims_full)[colnames(claims_full) == "id_client.x"] <- "id_client"
 claims_full <- merge(claims_full, clients, by = "id_client")
 claims_full <- claims_full[, !names(claims_full) %in% "id_client.y"]
+
 # Convert categorical variables to factors
 claims_full$severity <- factor(claims_full$severity, levels = c("low", "medium", "high"))
 claims_full$policy_status <- factor(claims_full$policy_status)
 claims_full$claim_status  <- factor(claims_full$claim_status)
-# Reorder columns for better readability
+
+# Reorder columns for readability
 claims_full <- claims_full[c(
   "id_claim", "id_client", "id_policy", "claim_date", "notification_date",
   "closure_date", "resolution_days", "claim_type", "severity",
@@ -62,22 +79,31 @@ claims_full <- claims_full[c(
   "premium_annual", "insured_amount", "deductible",
   "gender", "age_group", "income_level", "occupations"
 )]
+
+
 # =============================================================================
 # SECTION 4: DESCRIPTIVE ANALYSIS - RESOLUTION TIME
 # =============================================================================
-# Summary statistics for resolution_days
+
+# Summary statistics
 summary(claims_full$resolution_days)
+
 # Mean, median, and standard deviation
 mean_res <- mean(claims_full$resolution_days, na.rm = TRUE)
 median_res <- median(claims_full$resolution_days, na.rm = TRUE)
 sd_res <- sd(claims_full$resolution_days, na.rm = TRUE)
+
 cat("Mean resolution days:", mean_res, "\n")
 cat("Median resolution days:", median_res, "\n")
 cat("Standard deviation:", sd_res, "\n")
+
+
 # =============================================================================
 # SECTION 5: AGGREGATION - RESOLUTION TIME BY BUSINESS DIMENSIONS
 # =============================================================================
+
 options(dplyr.summarise.inform = FALSE)
+
 resolution_summary <- claims_full %>%
   group_by(type_insurance, severity) %>%
   summarise(
@@ -87,13 +113,16 @@ resolution_summary <- claims_full %>%
     n_claims = n()
   ) %>%
   arrange(desc(n_claims))
-# Display the generated table
+
+# Display table
 print(resolution_summary)
-# Save table as markdown for documentation
 kable(resolution_summary, digits = 1)
+
+
 # =============================================================================
 # SECTION 6: VISUALIZATION - RESOLUTION TIME DISTRIBUTION
 # =============================================================================
+
 # Density plot by insurance type
 p_density <- ggplot(claims_full, aes(x = resolution_days)) +
   geom_density(fill = "steelblue", alpha = 0.7, color = "white") +
@@ -104,6 +133,10 @@ p_density <- ggplot(claims_full, aes(x = resolution_days)) +
     y = "Density"
   ) +
   theme_minimal()
+
+ggsave(paste0(base_path, "/output/visuals/resolution_density_by_type.png"),
+       plot = p_density, width = 12, height = 8, dpi = 300)
+
 # Boxplot by insurance type
 p_box_type <- ggplot(claims_full, aes(x = type_insurance, y = resolution_days)) +
   geom_boxplot(fill = "lightblue", alpha = 0.7, outlier.size = 1.2) +
@@ -114,11 +147,10 @@ p_box_type <- ggplot(claims_full, aes(x = type_insurance, y = resolution_days)) 
   ) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-# Save plots
-ggsave(paste0(base_path, "/output/visuals/resolution_density_by_type.png"),
-       plot = p_density, width = 12, height = 8, dpi = 300)
+
 ggsave(paste0(base_path, "/output/visuals/resolution_boxplot_by_type.png"),
        plot = p_box_type, width = 10, height = 7, dpi = 300)
+
 # Boxplot by severity and insurance type
 p_severity_type <- ggplot(claims_full, aes(x = severity, y = resolution_days, fill = severity)) +
   geom_boxplot(
@@ -151,11 +183,14 @@ p_severity_type <- ggplot(claims_full, aes(x = severity, y = resolution_days, fi
     plot.background = element_rect(fill = "white", color = NA)
   ) +
   geom_jitter(aes(color = type_insurance), alpha = 0.4, size = 1.2, width = 0.2)
+
 ggsave(paste0(base_path, "/output/visuals/resolution_by_severity_type.png"),
        plot = p_severity_type, width = 12, height = 8, dpi = 300)
+
 # Long format for easy plotting
 resolution_summary_long <- resolution_summary %>%
   pivot_longer(cols = c(mean_days, median_days), names_to = "metric", values_to = "value")
+
 p_long_format <- ggplot(resolution_summary_long, aes(x = type_insurance, y = value, group = severity, color = severity)) +
   geom_point(position = position_dodge(0.2), size = 3) +
   geom_line(position = position_dodge(0.2)) +
@@ -166,11 +201,15 @@ p_long_format <- ggplot(resolution_summary_long, aes(x = type_insurance, y = val
     color = "Severity"
   ) +
   theme_minimal()
+
 ggsave(paste0(base_path, "/output/visuals/avg_median_resolution_by_type_severity.png"),
        plot = p_long_format, width = 10, height = 7, dpi = 300)
+
+
 # =============================================================================
 # SECTION 7: MONTHLY RESOLUTION TREND ANALYSIS
 # =============================================================================
+
 # Create monthly resolution data
 claims_full <- claims_full %>%
   mutate(
@@ -180,6 +219,7 @@ claims_full <- claims_full %>%
       sep = "-"
     )
   )
+
 monthly_resolution <- claims_full %>%
   group_by(closure_year_month) %>%
   summarise(
@@ -190,6 +230,7 @@ monthly_resolution <- claims_full %>%
   ) %>%
   mutate(date_order = as.Date(paste0(closure_year_month, "-01"))) %>%
   arrange(date_order)
+
 # Plot monthly resolution trend
 p_monthly <- ggplot(monthly_resolution, aes(x = date_order, y = mean_days, group = 1)) +
   geom_line(aes(linetype = "Monthly Average"), color = "#3498DB", linewidth = 2, alpha = 0.9) +
@@ -209,11 +250,15 @@ p_monthly <- ggplot(monthly_resolution, aes(x = date_order, y = mean_days, group
   scale_shape_manual(values = c("Monthly Data" = 19)) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "bottom")
+
 ggsave(paste0(base_path, "/output/visuals/monthly_resolution_trend.png"),
        plot = p_monthly, width = 12, height = 8, dpi = 300)
+
+
 # =============================================================================
 # SECTION 8: ANOMALY DETECTION - FRAUD SCORE CALCULATION
 # =============================================================================
+
 # Calculate fraud scores
 fraud_scores <- claims_full %>%
   left_join(
@@ -224,7 +269,7 @@ fraud_scores <- claims_full %>%
     rapid_resolution = ifelse(resolution_days <= 5, 1, 0),
     amount_flag = ifelse(claimed_amount > quantile(claimed_amount, 0.95, na.rm = TRUE), 1, 0),
     freq_flag = ifelse(client_freq > 5, 1, 0),
-    disparity_flag = ifelse(claimed_amount/insured_amount > 0.8, 1, 0),
+    disparity_flag = ifelse(claimed_amount / insured_amount > 0.8, 1, 0),
     severity_critical = ifelse(severity %in% c("high", "Critical"), 1, 0),
     fraud_score = pmin(100,
                        rapid_resolution * 25 +
@@ -235,18 +280,23 @@ fraud_scores <- claims_full %>%
     )
   ) %>%
   arrange(desc(fraud_score))
+
 # Print summary
 print(paste("Total claims:", nrow(fraud_scores)))
 print(paste("Unique clients:", length(unique(fraud_scores$id_client))))
 print("Top 10 suspicious claims:")
 print(head(fraud_scores[, c("id_claim", "id_client", "client_freq", "resolution_days",
                             "fraud_score", "severity")], 10))
+
+
 # =============================================================================
 # SECTION 9: VISUALIZATION - FRAUD RISK ANALYSIS
 # =============================================================================
+
 # Heatmap of top 20 suspicious claims
 top_suspicious <- head(fraud_scores, 20)
-p_heatmap <- ggplot(top_suspicious, aes(x = reorder(paste(id_claim, id_client, sep=" | "), fraud_score),
+
+p_heatmap <- ggplot(top_suspicious, aes(x = reorder(paste(id_claim, id_client, sep = " | "), fraud_score),
                                         y = severity, fill = fraud_score)) +
   geom_raster(color = "white", linewidth = 0.1) +
   geom_text(aes(label = round(fraud_score, 0)),
@@ -265,8 +315,10 @@ p_heatmap <- ggplot(top_suspicious, aes(x = reorder(paste(id_claim, id_client, s
   ) +
   scale_x_discrete(expand = c(0, 0)) +
   scale_y_discrete(expand = c(0, 0))
+
 ggsave(paste0(base_path, "/output/visuals/top_20_suspicious_claims_heatmap.png"),
        plot = p_heatmap, width = 14, height = 8, dpi = 300)
+
 # Violin plot of fraud score by severity
 p_violin <- ggplot(fraud_scores, aes(x = severity, y = fraud_score, fill = severity)) +
   geom_violin(alpha = 0.7, draw_quantiles = c(0.25, 0.5, 0.75)) +
@@ -277,14 +329,16 @@ p_violin <- ggplot(fraud_scores, aes(x = severity, y = fraud_score, fill = sever
        x = "Severity", y = "Fraud Risk Score") +
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
+
 ggsave(paste0(base_path, "/output/visuals/fraud_score_by_severity.png"),
        plot = p_violin, width = 10, height = 7, dpi = 300)
 
 
+# =============================================================================
+# SECTION 10: RESOLUTION TIME BOXPLOT (DETAILED VIEW)
+# =============================================================================
 
-
-# 1. Resolution Time Boxplot
-Boxplot <- ggplot(claims_full, aes(x = type_insurance, y = resolution_days, fill = severity)) +
+p_resolution_boxplot <- ggplot(claims_full, aes(x = type_insurance, y = resolution_days, fill = severity)) +
   geom_boxplot(alpha = 0.75, outlier.shape = 21, outlier.fill = "#E74C3C", outlier.size = 2) +
   geom_jitter(aes(color = severity), width = 0.2, alpha = 0.6, size = 1.5) +
   scale_fill_manual(values = c("low" = "#2ECC71", "medium" = "#F39C12", "high" = "#E74C3C")) +
@@ -298,13 +352,12 @@ Boxplot <- ggplot(claims_full, aes(x = type_insurance, y = resolution_days, fill
         plot.title = element_text(face = "bold", size = 14))
 
 ggsave(paste0(base_path, "/output/visuals/01_resolution_analysis.png"),
-       plot = Boxplot, width = 12, height = 8, dpi = 300)
+       plot = p_resolution_boxplot, width = 12, height = 8, dpi = 300)
 
 
 # =============================================================================
-# SECTION 10: EXECUTIVE SUMMARY - FRAUD RISK TIERS
+# SECTION 11: EXECUTIVE SUMMARY - FRAUD RISK TIERS
 # =============================================================================
-
 
 summary_table <- fraud_scores %>%
   mutate(
@@ -378,14 +431,14 @@ summary_gt <- summary_table %>%
     row.striping.include_table_body = TRUE
   )
 
-
 # Save summary table as HTML
 htmltools::save_html(summary_gt, paste0(base_path, "/output/tables/fraud_risk_executive_summary.html"))
 
 
 # =============================================================================
-# SECTION 11: CLIENT PERFORMANCE ANALYSIS
+# SECTION 12: CLIENT PERFORMANCE ANALYSIS
 # =============================================================================
+
 client_perf <- claims_full %>%
   count(id_client, name = "client_freq") %>%
   mutate(segment = case_when(
@@ -400,6 +453,7 @@ client_perf <- claims_full %>%
             n_clients = n(),
             .groups = "drop") %>%
   mutate(segment = factor(segment, levels = c("Low Freq (1)", "Medium Freq (2-3)", "High Freq (4+)")))
+
 p_client_perf <- ggplot(client_perf, aes(x = segment, y = avg_resolution, fill = segment)) +
   geom_col(alpha = 0.85, color = "white", linewidth = 1) +
   geom_text(aes(label = paste0(round(avg_resolution), "d\n(", n_clients, " clients)")),
@@ -410,15 +464,20 @@ p_client_perf <- ggplot(client_perf, aes(x = segment, y = avg_resolution, fill =
   scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
+
 ggsave(paste0(base_path, "/output/visuals/client_resolution_efficiency.png"),
        plot = p_client_perf, width = 10, height = 7, dpi = 300)
+
+
 # =============================================================================
-# SECTION 12: HEATMAPS - CLAIM FREQUENCY & AMOUNT
+# SECTION 13: HEATMAPS - CLAIM FREQUENCY & AMOUNT
 # =============================================================================
+
 # Claim frequency heatmap by age group and insurance type
 freq_data <- table(claims_full$age_group, claims_full$type_insurance)
 freq_df <- as.data.frame(freq_data)
 colnames(freq_df) <- c("age_group", "type_insurance", "n")
+
 p_freq_heatmap <- ggplot(freq_df, aes(x = type_insurance, y = age_group, fill = n)) +
   geom_tile(color = "white", linewidth = 1.2) +
   geom_text(aes(label = n), color = "white", fontface = "bold", size = 4.5) +
@@ -427,15 +486,19 @@ p_freq_heatmap <- ggplot(freq_df, aes(x = type_insurance, y = age_group, fill = 
   labs(title = "Claim FREQUENCY Heatmap", x = "Insurance Type", y = "Age Group") +
   theme_minimal(base_size = 12) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 ggsave(paste0(base_path, "/output/visuals/claim_frequency_heatmap.png"),
        plot = p_freq_heatmap, width = 10, height = 6, dpi = 300)
+
 # Claim amount heatmap by age group and insurance type
 amount_data <- aggregate(claimed_amount ~ age_group + type_insurance,
                          data = claims_full, sum)
 colnames(amount_data)[3] <- "total_amount"
 amount_data$total_amount <- amount_data$total_amount / 1000
+
 age_order <- c("20-30", "31-40", "41-50", "51-60", "61-70", "71-80")
 amount_data$age_group <- factor(amount_data$age_group, levels = age_order)
+
 p_amount_heatmap <- ggplot(amount_data,
                            aes(x = reorder(type_insurance, total_amount, FUN = median),
                                y = age_group, fill = total_amount)) +
@@ -466,5 +529,11 @@ p_amount_heatmap <- ggplot(amount_data,
     legend.position = "right",
     legend.key.height = unit(1.5, "cm")
   )
+
 ggsave(paste0(base_path, "/output/visuals/claim_amount_heatmap.png"),
        plot = p_amount_heatmap, width = 11, height = 7.5, dpi = 300, bg = "white")
+
+
+# =============================================================================
+# END OF SCRIPT
+# =============================================================================
