@@ -6,7 +6,7 @@
 
   
 ````
-Insurance-Claims-Intelligence/
+Insurance Claim Analytics/
 │
 ├── data/                         # Raw and processed data
 │   ├── policies.csv              # Policy master data
