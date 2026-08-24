@@ -125,6 +125,7 @@ insurance-claims-analysis/
 │   └── tables/
 │       └── fraud_risk_executive_summary.html
 │
+├── infographic
 ├── .gitattributes
 ├── LICENSE
 ├── README.md
