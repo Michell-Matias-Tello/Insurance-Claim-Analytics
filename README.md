@@ -6,35 +6,39 @@
 
   
 ````
-insurance-claims-analysis/
+Insurance-Claims-Intelligence/
 │
-├── data/
-│   ├── raw/
-│   │   ├── policies.csv        # Policy master data
-│   │   ├── clients.csv          # Client information
-│   │   ├── claims.csv           # Claims transaction data
-│   │   └── payments.csv         # Payment records
-│   │
-│   └── processed/
-│       └── claims_full.RData    # Enriched, cleaned dataset
+├── data/                         # Raw and processed data
+│   ├── policies.csv              # Policy master data
+│   ├── clients.csv               # Client information
+│   ├── claims.csv                # Claims transaction data
+│   └── payments.csv              # Payment records
 │
 ├── scripts/
-│   ├── 01_data_generation.py    # Synthetic data generation (Python)
-│   └── 02_data_preparation.R    # Data loading, cleaning, enrichment
+│   ├── Datos.R       # Synthetic data generation (Python)
+│   └── Main code.R   # Data loading, cleaning & enrichment
 │
 ├── outputs/
-│   ├── figures/
-│   │   ├── resolution_distribution.png
-│   │   ├── anomaly_heatmap.png
-│   │   ├── risk_dashboard.png
-│   │   └── time_trends.png
-│   │
+│   ├── figures/                  # Generated visualizations
+│   │   ├── 01_resolution_analysis.png
+│   │   ├── avg_median_resolution_by_type_severity.png
+│   │   ├── claim_amount_heatmap.png
+│   │   ├── claim_frequency_heatmap.png
+│   │   ├── client_resolution_efficiency.png
+│   │   ├── fraud_score_by_severity.png
+│   │   ├── monthly_resolution_trend.png
+│   │   ├── resolution_boxplot_by_type.png
+│   │   ├── resolution_by_severity_type.png
+│   │   ├── resolution_density_by_type.png
+│   │   └── top_20_suspicious_claims_heatmap.png
+│   │   
 │   └── reports/
 │       └── executive_summary.pdf
 │
 ├── README.md
 ├── LICENSE
-└── .gitignore
+└── .gitattributes
+
 ````
  ---
   
