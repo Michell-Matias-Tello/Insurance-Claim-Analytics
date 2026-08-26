@@ -280,7 +280,7 @@ base_path <- "C:/Your/Path/To/Insurance"
 <h3>7.2 Generate Synthetic Data</h3>
 
 <pre>
-source("scripts/Cargar los paquetes.txt")
+source(" Datos.R ")
 </pre>
 
 <p>This creates four CSV files: <code>policies.csv</code>, <code>clients.csv</code>, <code>claims.csv</code>, and <code>payments.csv</code>.</p>
