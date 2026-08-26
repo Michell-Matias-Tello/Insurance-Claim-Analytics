@@ -43,7 +43,7 @@
 
 <ul>
   <li>Full R analysis pipeline (<code>Main code.R</code>)</li>
-  <li>Synthetic data generator (<code>Cargar los paquetes.txt</code>)</li>
+  <li>Synthetic data generator (<code>Datos.R </code>)</li>
   <li>Interactive and static visualizations</li>
   <li>Executive dashboard</li>
   <li>Fraud risk scoring engine</li>
